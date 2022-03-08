@@ -8,14 +8,19 @@ import glob
 import argparse
 import tempfile
 import shutil
-import atexit
+import signal
+import sys
+import wget
+#import urllib3
 
-class Torrent: 
+class torrent: 
     def __init__(self): 
         self.query, self.download_dir = self.__get_command_line_args()
-        self.list_index: int 
+        self.list_index = None 
         self.soup = self.__request_soup()
         self.tmp_dir: str
+        # TODO: -s --sort
+        # TODO: unit testing? test if list index is defined 
 
     def __get_command_line_args(self): 
         parser = argparse.ArgumentParser(description='Arguments')
@@ -44,7 +49,7 @@ class Torrent:
         print(f"query: {self.query}")
         print(f"download_dir: {self.download_dir}")
         print(f"list_index: {self.list_index}")
-        print(f"soup: {self.soup}")
+        #print(f"soup: {self.soup}")
 
     def get_titles(self): 
         title=self.soup.findAll('h5', {"class": "title w-100 truncate"})
@@ -60,7 +65,8 @@ class Torrent:
         for e in divs: 
             print(e)
 
-    def get_torrent(self): 
+    def get_torrent_name(self): 
+        # Returns name of .torrent file, retived from website
         anchors=self.soup.findAll('a', {'class': 'dl-torrent'}, href=True)
         torrents = []
         for e in anchors:
@@ -70,14 +76,30 @@ class Torrent:
             x0=len('/torrent/') + x0
             torrent_file=link[x0:x1]
             torrents.append(torrent_file)
+
+        assert(self.list_index != None) 
         return torrents[self.list_index]
 
+    def get_torrent_href(self): 
+        # Returns list of hrefs to torrent 
+        anchors=self.soup.findAll('a', {'class': 'dl-torrent'}, href=True)
+        hrefs = []
+        for e in anchors:
+            link=(e['href'])
+            hrefs.append(link)
+
+        assert(self.list_index != None) 
+        return hrefs[self.list_index]
+
     def get_magnet(self): 
+        # Returns magnet link retirved from website
         anchors=self.soup.findAll('a', {'class': 'dl-magnet'}, href=True)
         torrents = []
         for e in anchors:
             link=(e['href'])
             torrents.append(link)
+
+        assert(self.list_index != None) 
         return torrents[self.list_index]
 
     def choose_title(self, titles: list):
@@ -91,13 +113,34 @@ class Torrent:
 
         self.list_index = nr-1
 
-
     def get_metadata(self):
         self.tmp_dir = tempfile.mkdtemp()
-        magnet = self.get_magnet()
-        subprocess.call(['aria2c', '--dir', self.tmp_dir, '--bt-metadata-only=true', '--bt-save-metadata=true', magnet])
-        def rm_tmp(): shutil.rmtree(self.tmp_dir) # rmove tmp dir and content
-        atexit.register(rm_tmp)
+
+        def rm_tmp(signum, frame): 
+            shutil.rmtree(self.tmp_dir)
+            sys.exit(0) # rmove tmp dir and content
+
+        signal.signal(signal.SIGINT, rm_tmp) 
+
+        if True: 
+            # TODO: download .torrent https://stackabuse.com/download-files-with-python/
+            #wget.download(hrefs[0], self.get_torrent_name())
+
+            tmp_path = self.tmp_dir + "/" + self.get_torrent_name()
+            subprocess.call(['wget', '-O', tmp_path, self.get_torrent_href()])
+            #wget.download(hrefs[0], self.get_torrent_name())
+
+            # Downloads html ...
+            #r = requests.get(self.get_torrent_href())
+            #open(self.get_torrent_name() , 'wb').write(r.content)
+
+        else: 
+            magnet = self.get_magnet()
+            subprocess.call(['aria2c', '--dir', self.tmp_dir, '--bt-metadata-only=true', '--bt-save-metadata=true', magnet])
+
+
+
+
         # add direct download option
 
     def download_torrent(self):
@@ -108,51 +151,22 @@ class Torrent:
         magnet=self.get_magnet()
         subprocess.call(['aria2c', '--dir', self.download_dir, '--select-file', file_nr, magnet])
 
+    def main(self): 
+        titles = self.get_titles()
+        self.choose_title(titles)
+        self.get_metadata()
+        self.download_torrent()
+        shutil.rmtree(self.tmp_dir)
 
-#dirpath = tempfile.mkdtemp() # make tmp dir
-
-
-#print(get_magnets(soup)[0])
-#print(get_torrents(soup)[0])
-#print(get_titles(soup)[0])
-
-    #print(get_titles()[0:3])
-
-    #titles = get_titles(soup)
-    #choose_title(titles)
-#choose_title()
-
-#choose_file(magnet)
-
-        ## Print files to sto
-        ## Choose filenr from list
-        #read input_nr
-        #download_dir="${HOME}/Downloads"
-        ##subprocess.run(["ls", "-l"])
-#print(get_titles())
-#print(get_links())
-
-#def get_title():
-#    title_class = "title w-100 truncate"
-#    return soup.findAll('div', {"class": title_class})
-
-
-
-#torr=get_magnets()[0]
-#download_torrent(torr)
 if __name__ == "__main__":
-    t = Torrent()
-    titles = t.get_titles()
-    t.choose_title(titles)
-    magnet = t.get_magnet()
-    #torrent = t.get_torrent()
-    t.get_metadata()
-    t.download_torrent()
-    #t.download_torrent()
+    t = torrent()
+    t.main()
+    #t.print_vars()
+    #t.list_index = 0
+    #print(t.get_torrent_href())
+    #t.get_metadata()
+
 
     
-    #print(t.__get_command_line_args())
-    #t.print_vars()
-    #print(vars(t))
 
 

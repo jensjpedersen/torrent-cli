@@ -66,14 +66,19 @@ def get_rating(title):
 
     print(len(series))
 
-def get_plot(title:str, season:int, episode:int):
+def get_imdb_dict(title:str, season:int = None, episode:int = None):
     ia = imdb.Cinemagoer()
-    series = ia.search_movie(title)
-    series_id = series[0].movieID
-    series = ia.get_movie(series_id)
+    series = ia.search_movie(title)[0]
+    #series_id = series[0].movieID
+    #series = ia.get_movie(series_id)
     ia.update(series, 'episodes')
-    print(series['episodes'].keys())
-    print(series['episodes'][season][episode])
+
+    if season and episode:
+        return series['episodes'][season][episode]
+    elif season and not episode: 
+        return series['episodes'][season]
+    else: 
+        return series
 
 def format_titles(titles:list):
     name_list = []
