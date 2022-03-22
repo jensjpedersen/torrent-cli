@@ -15,17 +15,19 @@ import wget
 
 class torrent: 
     def __init__(self): 
-        self.query, self.download_dir = self.__get_command_line_args()
+        self.query, self.download_dir, self.page = self.__get_command_line_args()
         self.list_index = None 
         self.soup = self.__request_soup()
         self.tmp_dir: str
         # TODO: -s --sort
         # TODO: unit testing? test if list index is defined 
+        # TODO: command line arg for page number
 
     def __get_command_line_args(self): 
         parser = argparse.ArgumentParser(description='Arguments')
         parser.add_argument('-q', "--query", type=str, help="Search for torrent ")
         parser.add_argument('-d', "--dir", type=str, help="Download directory")
+        parser.add_argument('-p', "--page", type=str, help="Choose page nr")
         args = parser.parse_args()
 
         query="the office"
@@ -36,26 +38,38 @@ class torrent:
         if args.dir: 
             download_dir = args.dir
 
-        return query, download_dir
+        page = 1
+        if args.page:
+            page = args.page
+
+        return query, download_dir, page
 
     def __request_soup(self): 
         query=self.query.replace(" ", "+")
-        url="https://solidtorrents.net/search?q=" + query + "&sort=seeders" 
+        #url="https://solidtorrents.net/search?q=" + query + "&sort=seeders" 
+        url = "https://solidtorrents.to/search?q=" + query + "&sort=seeders&page=" + str(self.page)
+        #url = "https://solidtorrents.to/search?q=" + query + "&page=" + self.page
         r = requests.get(url)
         soup = BeautifulSoup(r.text, 'html.parser')
         return soup
 
     def print_vars(self):
         print(f"query: {self.query}")
+        print(f"page number: {self.page}")
         print(f"download_dir: {self.download_dir}")
         print(f"list_index: {self.list_index}")
-        #print(f"soup: {self.soup}")
 
     def get_titles(self): 
         title=self.soup.findAll('h5', {"class": "title w-100 truncate"})
         titles=[]
         for e in title: 
             titles.append(e.text)
+
+        # If extra element is appearing on beginning of page, remove them
+        if len(titles) > 20: # Number of tiltres per page
+            idx_remove = len(titles)-20 # remove first element from list
+            del titles[0:idx_remove] # Remove first element form list
+
         return titles
 
     def get_stats(self): 
@@ -69,7 +83,7 @@ class torrent:
         # Returns name of .torrent file, retived from website
         anchors=self.soup.findAll('a', {'class': 'dl-torrent'}, href=True)
         torrents = []
-        for e in anchors:
+        for i, e in enumerate(anchors):
             link=(e['href'])
             search=re.search('/torrent/.+torrent', link)
             x0,x1=search.span()
@@ -78,6 +92,9 @@ class torrent:
             torrents.append(torrent_file)
 
         assert(self.list_index != None) 
+        if self.list_index > len(anchors)-1:
+            raise(IndexError(f"Anchor element does not exisit, Nr. links = {len(anchors)}"))
+
         return torrents[self.list_index]
 
     def get_torrent_href(self): 
@@ -105,11 +122,10 @@ class torrent:
     def choose_title(self, titles: list):
         for i,e in enumerate(titles):
             print(f"{i+1:3}:{e}")
-
         try: 
-            nr=int(input("\n Choose title: "))
+            nr=int(input("\nChoose title: "))
         except ValueError:
-            print(" Input should be an integer")
+            print(" Input should be an integer value")
 
         self.list_index = nr-1
 
@@ -149,7 +165,7 @@ class torrent:
         subprocess.call(['aria2c', '--show-files', torrent_file]) # Only wokrs for torrent file or metalink (not magnet?)
         file_nr=input("enter file nr: ")
         magnet=self.get_magnet()
-        subprocess.call(['aria2c', '--dir', self.download_dir, '--select-file', file_nr, magnet])
+        subprocess.call(['aria2c', '--dir', self.download_dir, '--select-file', file_nr, magnet, '--allow-overwrite=true'])
 
     def main(self): 
         titles = self.get_titles()
@@ -160,6 +176,8 @@ class torrent:
 
 if __name__ == "__main__":
     t = torrent()
+    #print(type(t.page))
+
     t.main()
     #t.print_vars()
     #t.list_index = 0
