@@ -26,28 +26,33 @@ class CursesMenu:
 
 
 
-    def print_menu(self, win1): 
+    def print_menu(self, stdscr, x0:int, y0:int, lx:int, ly:int): 
+        win1= curses.newwin(ly-1, lx-1, y0+1, x0+1)
         for i, e in enumerate(self.menu): 
             if self.list_idx == i:
                 #win1.addstr(self.box1[0]+1+i, self.box1[1]+2, e[:self.box1[2]] + "\n", curses.A_STANDOUT)
-                win1.addstr(1+i, 1, e[:self.box1[3]-4] + "\n", curses.A_STANDOUT)
+                win1.addstr(1+i, 1, e[:lx-4] + "\n", curses.A_STANDOUT)
             else: 
                 #win1.addstr(self.box1[0]+1+i, self.box1[1]+2, e[:self.box1[2]-4] + "\n")
-                win1.addstr(1+i, 1, e[:self.box1[3]-4] + "\n")
+                win1.addstr(1+i, 1, e[:lx-4] + "\n")
         #textpad.rectangle(win1, 0, 0, self.box1[2]-1, self.box1[3])
         #textpad.rectangle(win1, 0, 0, 10, 10)
-        textpad.rectangle(win1, 0, 0, self.box1[2]-1, self.box1[3]-2) # used2 refs
+        textpad.rectangle(stdscr, y0, x0, y0+ly, x0+lx)
+        stdscr.refresh()
         win1.refresh()
 
-    def print_info(self, win2): 
-        # Print file info in rigth column
-        #textpad.rectangle(win2, self.box2[0], self.box2[1], self.box2[2], self.box2[3])
 
-        win2.clear()
-        textpad.rectangle(win2, 0, 0, self.box2[2]-1, self.box2[3]-2)
-        #win2.addstr(1,1,self.info['title'][self.list_idx] + self.info['season'][self.list_idx] + self.info['episode'][self.list_idx])
+    def print_info(self, stdscr, x0:int, y0:int, lx:int, ly:int): 
+        win2= curses.newwin(ly-1, lx-1, y0+1, x0+1)
 
-        # Print title
+        #win2.clear()
+        textpad.rectangle(stdscr, y0, x0, y0+ly, x0+lx)
+
+        if self.info == None:
+            stdscr.refresh()
+            win2.refresh()
+            return
+
         if self.info['title'][self.list_idx] != None:
             win2.addstr(1,1,self.info['title'][self.list_idx])
 
@@ -61,9 +66,13 @@ class CursesMenu:
 
         self.__print_plot(win2, 4)
 
+        stdscr.refresh()
         win2.refresh()
 
     def __print_plot(self, win2, y_pos): 
+        if self.imdb == None:
+            return
+
         plot = self.imdb.get_plot(self.list_idx)
 
         if plot != None:
@@ -108,22 +117,27 @@ class CursesMenu:
         #self.box2 = [1, w//2-2, h-2, w//2-2]
         #self.box2 = [1, 90 , 10 , 20]
 
-        self.box1 = [1, 2,      h-2, w//2-1] # win dimesions relative to window. Use to add elements in win
-        self.x_spacing = 0
-        self.box2 = [1, w//2+self.x_spacing,   h-2, w//2-1]
+        #self.box1 = [1, 2,      h-2, w//2-1] # win dimesions relative to window. Use to add elements in win
+        #self.x_spacing = 0
+        #self.box2 = [1, w//2+self.x_spacing,   h-2, w//2-1]
 
         #self.search_box = [] # search box
 
-        win1 = curses.newwin(self.box1[2],self.box1[3], self.box1[0], self.box1[1])
-        win2 = curses.newwin(self.box2[2],self.box2[3], self.box2[0], self.box2[1])
+        #win1 = curses.newwin(self.box1[2],self.box1[3], self.box1[0], self.box1[1])
+        #win2 = curses.newwin(self.box2[2],self.box2[3], self.box2[0], self.box2[1])
 
         # Init menu
-        self.print_menu(win1)
-        self.print_info(win2)
+
+        box1 = [2, 1, w//2-5, h-4]
+        self.print_menu(stdscr, *box1)
+        
+        box2 = [w//2, 1, w//2-1, h-3] # x0, y0, lx, ly
+        self.print_info(stdscr, *box2)
 
         # Keyboard input
         while True: 
-            key = win1.getch()
+            #key = win1.getch()
+            key = stdscr.getch()
             logging.debug(f'pressed key: {key}')
             #stdscr.addstr(20, 20, str(key))
             #stdscr.addstr(5, 5, str(key))
@@ -149,8 +163,8 @@ class CursesMenu:
 
 
             
-            self.print_menu(win1)
-            self.print_info(win2)
+            self.print_menu(stdscr, *box1)
+            self.print_info(stdscr, *box2)
 
     def main(self): 
         logging.info(f'CursesMenu.main() - {datetime.datetime.now()}')
