@@ -84,6 +84,7 @@ class CursesMenu:
 
     def search_box(self, stdscr, x0:int, y0:int, lx:int, ly:int) -> str: 
         # TODO: good lxindolx size - use for box1 and box2
+        curses.curs_set(1)
         search_box = curses.newwin(ly-1, lx-1, y0+1, x0+1)
         #search_box.addstr("ksd skdjjdf lyksdjf skfdj  skjfd lyly lysdkf ly skjfd lysdkjsd lyfskdjf lyskjf lysdjfkkjf ly s")
 
@@ -100,7 +101,9 @@ class CursesMenu:
         # Get resulting contents
         query = text_box.gather()
 
+        curses.curs_set(0)
 
+        stdscr.clear()
         #stdscr.addstr(query)
         #stdscr.refresh()
         #stdscr.getcly()
@@ -128,10 +131,10 @@ class CursesMenu:
 
         # Init menu
 
-        box1 = [2, 1, w//2-5, h-4]
+        box1 = [2, 1, w//2-3, h-4]
         self.print_menu(stdscr, *box1)
         
-        box2 = [w//2, 1, w//2-1, h-3] # x0, y0, lx, ly
+        box2 = [w//2+1, 1, w//2-3, h-4] # x0, y0, lx, ly
         self.print_info(stdscr, *box2)
 
         # Keyboard input
@@ -155,14 +158,19 @@ class CursesMenu:
                 stdscr.clear()
             elif key == 47: # / 
                 # Search box
-                self.search_box(stdscr, 10, 10, 10, 10)
+                query = self.search_box(stdscr, w//2-5, h//2-5, 10, 10)
+                logging.info(f'Search box query: {query}')
+            elif key == 10: # pressed eneter
+                logging.info("Pressed enter")
+
+
+
 
             elif key == 113: # pressed q 
                 sys.exit(0)
                 curses.curs_set(1)
 
 
-            
             self.print_menu(stdscr, *box1)
             self.print_info(stdscr, *box2)
 
