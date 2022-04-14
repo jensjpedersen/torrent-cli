@@ -13,12 +13,17 @@ import sys
 import wget
 #import urllib3
 
-class torrent: 
-    def __init__(self): 
-        self.query, self.download_dir, self.page = self.__get_command_line_args()
+class Torrent: 
+    def __init__(self, query="Mandalorian", download_dir='/home/jensjp/Downloads', page=1): 
+        if len(sys.argv) > 1: 
+            self.query, self.download_dir, self.page = self.__get_command_line_args()
+        else: 
+            self.query, self.download_dir, self.page = query, download_dir, page
+
         self.list_index = None 
         self.soup = self.__request_soup()
-        self.tmp_dir: str
+        self.tmp_dir:str
+        self.url:str
         # TODO: -s --sort
         # TODO: unit testing? test if list index is defined 
         # TODO: command line arg for page number
@@ -30,7 +35,7 @@ class torrent:
         parser.add_argument('-p', "--page", type=str, help="Choose page nr")
         args = parser.parse_args()
 
-        query="the office"
+        query="Mandalorian"
         if args.query: 
             query=args.query
             
@@ -47,9 +52,17 @@ class torrent:
     def __request_soup(self): 
         query=self.query.replace(" ", "+")
         #url="https://solidtorrents.net/search?q=" + query + "&sort=seeders" 
-        url = "https://solidtorrents.to/search?q=" + query + "&sort=seeders&page=" + str(self.page)
+        self.url = "https://solidtorrents.to/search?q=" + query + "&sort=seeders&page=" + str(self.page)
         #url = "https://solidtorrents.to/search?q=" + query + "&page=" + self.page
-        r = requests.get(url)
+        r = requests.get(self.url)
+        if r.status_code == 522:
+            raise TimeoutError('Request 522 Connection Timed Out')
+        #try: 
+        #    r = requests.get(self.url)
+        #except requests.exceptions.Timeout as e:
+        #    print('skdjfhsdkjf')
+        #    SystemExit(f'Error:Get request Timout error: {e}')
+        
         soup = BeautifulSoup(r.text, 'html.parser')
         return soup
 
@@ -154,9 +167,6 @@ class torrent:
             magnet = self.get_magnet()
             subprocess.call(['aria2c', '--dir', self.tmp_dir, '--bt-metadata-only=true', '--bt-save-metadata=true', magnet])
 
-
-
-
         # add direct download option
 
     def download_torrent(self):
@@ -166,18 +176,17 @@ class torrent:
         file_nr=input("enter file nr: ")
         magnet=self.get_magnet()
         subprocess.call(['aria2c', '--dir', self.download_dir, '--select-file', file_nr, magnet, '--allow-overwrite=true'])
+        shutil.rmtree(self.tmp_dir)
 
     def main(self): 
         titles = self.get_titles()
         self.choose_title(titles)
         self.get_metadata()
         self.download_torrent()
-        shutil.rmtree(self.tmp_dir)
+        #shutil.rmtree(self.tmp_dir)
 
 if __name__ == "__main__":
-    t = torrent()
-    #print(type(t.page))
-
+    t = Torrent()
     t.main()
     #t.print_vars()
     #t.list_index = 0
