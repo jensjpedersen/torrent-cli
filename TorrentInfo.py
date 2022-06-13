@@ -1,7 +1,16 @@
 import re
 import imdb
 
-def format_torrent_name(torrent_name):
+def format_torrent_name(torrent_name:str):
+    """
+    Parmeters:
+        torrent_name - Usula torrent name format 
+
+    Funciton separates info from torrent_name
+
+    Returns:
+        dict with torrent info: title, release, season, episode
+    """
     string = torrent_name 
     string = string.replace(".", " ")
     string = string.replace("-", " ")
