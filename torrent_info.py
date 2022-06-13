@@ -13,7 +13,14 @@ from time import perf_counter
 #   |_|\___/|_|  |_|  \___|_| |_|\__|___|_| |_|_|  \___/ 
 
 class TorrentInfo: 
-    # Create dict with torrent info
+    """
+    Create dict with torrent info 
+
+    Parmeters:
+        torrent_names - List with torrent names as fetched from website
+                        Each list item is of type str
+        info - dict with info (name, year, season, episode) extracted from torrent_names
+    """
     def __init__(self, torrent_names:list): 
         self.torrent_names = torrent_names
         self.info = {}
