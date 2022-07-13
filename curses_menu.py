@@ -12,7 +12,7 @@ logging.basicConfig(filename='debug.log', encoding='utf-8', level=logging.DEBUG)
 
 class CursesMenu: 
 
-    def __init__(self, menu:list, info:dict=None, imdb:ImdbInfo=None): 
+    def __init__(self, menu:list=[], info:dict=None, imdb:ImdbInfo=None): 
         self.imdb = imdb # Class instance of ImdbInfo class
         self.menu = menu # list with torrent names
         self.info = info # dict with torrent info
@@ -85,13 +85,15 @@ class CursesMenu:
     def search_box(self, stdscr, x0:int, y0:int, lx:int, ly:int) -> str: 
         # TODO: good lxindolx size - use for box1 and box2
         curses.curs_set(1)
+
+        stdscr.addstr(y0-1, x0-lx//2, "Search for torrent: (hit Ctrl-G to send)")
         search_box = curses.newwin(ly-1, lx-1, y0+1, x0+1)
         #search_box.addstr("ksd skdjjdf lyksdjf skfdj  skjfd lyly lysdkf ly skjfd lysdkjsd lyfskdjf lyskjf lysdjfkkjf ly s")
 
         textpad.rectangle(stdscr, y0, x0, y0+ly, x0+lx)
         stdscr.refresh()
-        search_box.refresh()
-        search_box.getch()
+        # search_box.refresh()
+        # search_box.getch()
 
         text_box = textpad.Textbox(search_box)
 
@@ -162,9 +164,8 @@ class CursesMenu:
                 logging.info(f'Search box query: {query}')
             elif key == 10: # pressed eneter
                 logging.info("Pressed enter")
-
-
-
+                logging.info(f'{self.list_idx}')
+                return self.list_idx
 
             elif key == 113: # pressed q 
                 sys.exit(0)
@@ -176,12 +177,16 @@ class CursesMenu:
 
     def main(self): 
         logging.info(f'CursesMenu.main() - {datetime.datetime.now()}')
-        curses.wrapper(self.curses_menu)
+        list_idx = curses.wrapper(self.curses_menu)
+        return list_idx 
 
 
 
 if __name__ == "__main__":
     test = ["hei kjsdf sdkjfh sdfkjadsfkj sakdjf skjfh sakfdjh sadkfjfkjsa fkjsad kjsa sakdhj sakjf sakd hsahj", "hva", "heter", "du", "jeg", "lurer"] 
+
+    cm = CursesMenu()
+
     cm = CursesMenu(test)
     cm.main()
     #curses.wrapper(cm.curses_menu)

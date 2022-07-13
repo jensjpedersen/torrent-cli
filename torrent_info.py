@@ -87,7 +87,12 @@ class TorrentInfo:
         
 
     def strip_num_from_char(self, episodes:list):
-       # Use to remove list number from string. arg = list with episodes or seasons 
+        """
+        Use to remove list number from string. 
+
+        Parameters:
+            episodes - list with episodes or seasons
+        """
         ep_list = []
         for i in range(len(episodes)): 
             try: 
@@ -101,7 +106,10 @@ class TorrentInfo:
         return ep_list
 
     def get_info_dict(self): 
-        # Create struct with info
+        """
+        Create and return dict with info
+        """
+
         torr_dict = self.format_titles(self.torrent_names)
 
         self.info['title'] = torr_dict['title']

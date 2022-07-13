@@ -14,11 +14,16 @@ import wget
 #import urllib3
 
 class Torrent: 
-    def __init__(self, query="Mandalorian", download_dir='/home/jensjp/Downloads', page=1): 
+
+    def __init__(self, query=None, download_dir='/home/jensjp/Downloads', page=1): 
         if len(sys.argv) > 1: 
-            self.query, self.download_dir, self.page = self.__get_command_line_args()
+            self.query, self.download_dir, self.page = self.__get_command_line_args(query, download_dir, page)
         else: 
             self.query, self.download_dir, self.page = query, download_dir, page
+
+        if self.query==None:
+            raise ValueError(f'Query is {self.query}. Not a vaild serach string')
+
 
         self.list_index = None 
         self.soup = self.__request_soup()
@@ -28,22 +33,19 @@ class Torrent:
         # TODO: unit testing? test if list index is defined 
         # TODO: command line arg for page number
 
-    def __get_command_line_args(self): 
+    def __get_command_line_args(self, query, download_dir, page): 
         parser = argparse.ArgumentParser(description='Arguments')
         parser.add_argument('-q', "--query", type=str, help="Search for torrent ")
         parser.add_argument('-d', "--dir", type=str, help="Download directory")
         parser.add_argument('-p', "--page", type=str, help="Choose page nr")
         args = parser.parse_args()
 
-        query="Mandalorian"
         if args.query: 
             query=args.query
             
-        download_dir = '/home/jensjp/Downloads'
         if args.dir: 
             download_dir = args.dir
 
-        page = 1
         if args.page:
             page = args.page
 
@@ -133,6 +135,8 @@ class Torrent:
         return torrents[self.list_index]
 
     def choose_title(self, titles: list):
+        # Method sets list_index
+        # For use in command line
         for i,e in enumerate(titles):
             print(f"{i+1:3}:{e}")
         try: 
@@ -141,6 +145,12 @@ class Torrent:
             print(" Input should be an integer value")
 
         self.list_index = nr-1
+
+    def set_list_index(self, idx:int):
+        # Method sets list_index
+        # For use in scripts 
+        self.list_index = idx
+
 
     def get_metadata(self):
         self.tmp_dir = tempfile.mkdtemp()
@@ -178,16 +188,21 @@ class Torrent:
         subprocess.call(['aria2c', '--dir', self.download_dir, '--select-file', file_nr, magnet, '--allow-overwrite=true'])
         shutil.rmtree(self.tmp_dir)
 
-    def main(self): 
+    def main_terminal(self): 
         titles = self.get_titles()
         self.choose_title(titles)
         self.get_metadata()
         self.download_torrent()
         #shutil.rmtree(self.tmp_dir)
 
+    def main_curses(self, list_idx): 
+        self.set_list_index(list_idx)
+        self.get_metadata()
+        self.download_torrent()
+
 if __name__ == "__main__":
     t = Torrent()
-    t.main()
+    t.main_terminal()
     #t.print_vars()
     #t.list_index = 0
     #print(t.get_torrent_href())
@@ -195,5 +210,6 @@ if __name__ == "__main__":
 
 
     
+
 
 
