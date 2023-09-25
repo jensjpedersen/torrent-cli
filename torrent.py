@@ -203,6 +203,7 @@ class Torrent:
 if __name__ == "__main__":
     t = Torrent()
     t.main_terminal()
+    # t.main_curses()
     #t.print_vars()
     #t.list_index = 0
     #print(t.get_torrent_href())

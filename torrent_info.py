@@ -1,6 +1,7 @@
 import re
 from torrent import Torrent
 import imdb
+import sys
 import numpy as np
 import logging
 from threading import Thread
@@ -261,8 +262,8 @@ if __name__ == "__main__":
     print(dic)
 
     im = ImdbInfo(dic)
-    exit()
     im.update_imdb_info()
+    sys.exit()
 
     #im.get_plot(1)
     #print(im.imdb_episode_list[1]['plot'])
